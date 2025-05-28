@@ -1,0 +1,201 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>MASTER's All-in-One Projects</title>
+  <link href="https://unpkg.com/aos@2.3.1/dist/aos.css" rel="stylesheet">
+  <style>
+    body { font-family: 'Segoe UI', sans-serif; margin: 0; background: #111; color: #eee; transition: background 0.3s, color 0.3s; }
+    header, footer { background: #222; padding: 1rem; text-align: center; }
+    nav { text-align: center; margin: 1rem 0; }
+    nav button { margin: 0.3rem; padding: 0.6rem 1.2rem; background: #007bff; color: white; border: none; cursor: pointer; border-radius: 5px; }
+    section { display: none; padding: 2rem; }
+    section.active { display: block; }
+    canvas { background: #333; display: block; margin: auto; }
+    input, button { padding: 0.5rem; margin: 0.5rem 0; }
+    .dark-mode { background: #eee; color: #111; }
+    .project-preview { width: 100px; display: inline-block; margin: 1rem; cursor: pointer; }
+    #stopwatchDisplay { font-size: 2rem; margin: 1rem 0; }
+    .lap { font-size: 0.9rem; color: #aaa; }
+  </style>
+</head>
+<body>
+
+<header>
+  <h1 data-aos="fade-down">MASTER's All-in-One Project Showcase</h1>
+  <button onclick="toggleMode()">Toggle Dark/Light</button>
+</header>
+
+<nav data-aos="fade-up">
+  <button onclick="showSection('carGame')">🚗 Car Game</button>
+  <button onclick="showSection('stopwatch')">⏱️ Stopwatch</button>
+  <button onclick="showSection('weather')">☁️ Weather</button>
+  <button onclick="showSection('contact')">📬 Contact</button>
+</nav>
+
+<!-- Car Game -->
+<section id="carGame" class="active" data-aos="fade-up">
+  <h2>🚗 Car Game</h2>
+  <canvas id="gameCanvas" width="300" height="500"></canvas>
+</section>
+
+<!-- Stopwatch -->
+<section id="stopwatch" data-aos="fade-up">
+  <h2>⏱️ Stopwatch</h2>
+  <div id="stopwatchDisplay">00:00:00</div>
+  <button onclick="startStopwatch()">Start</button>
+  <button onclick="stopStopwatch()">Stop</button>
+  <button onclick="resetStopwatch()">Reset</button>
+  <div id="laps"></div>
+</section>
+
+<!-- Weather App -->
+<section id="weather" data-aos="fade-up">
+  <h2>☁️ Weather</h2>
+  <input type="text" id="cityInput" placeholder="Enter city"/>
+  <button onclick="getWeather()">Get Weather</button>
+  <div id="weatherResult"></div>
+</section>
+
+<!-- Contact Form -->
+<section id="contact" data-aos="fade-up">
+  <h2>📬 Contact Me</h2>
+  <form id="contactForm">
+    <input type="text" id="name" placeholder="Name" required><br>
+    <input type="email" id="email" placeholder="Email" required><br>
+    <textarea id="message" placeholder="Message" required></textarea><br>
+    <button type="submit">Send</button>
+  </form>
+  <div id="formStatus"></div>
+</section>
+
+<footer>
+  <p>&copy; 2025 MASTER | One-File Portfolio</p>
+</footer>
+
+<!-- Firebase SDK -->
+<script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-firestore-compat.js"></script>
+<!-- AOS animation -->
+<script src="https://unpkg.com/aos@2.3.1/dist/aos.js"></script>
+<script>
+AOS.init();
+const firebaseConfig = { apiKey: "YOUR_API_KEY", authDomain: "YOUR_DOMAIN", projectId: "YOUR_PROJECT_ID", storageBucket: "YOUR_BUCKET", messagingSenderId: "SENDER_ID", appId: "APP_ID" };
+firebase.initializeApp(firebaseConfig);
+const db = firebase.firestore();
+
+// Contact Form
+const contactForm = document.getElementById("contactForm");
+contactForm.addEventListener("submit", async (e) => {
+  e.preventDefault();
+  const name = document.getElementById("KHUZAIMA").value;
+  const email = document.getElementById("khuzaimafarhanvib2912@gmail.com").value;
+  const message = document.getElementById("03348599125").value;
+  try {
+    await db.collection("messages").add({ name, email, message, timestamp: new Date() });
+    document.getElementById("formStatus").textContent = "Message sent!";
+    contactForm.reset();
+  } catch (err) {
+    document.getElementById("formStatus").textContent = "Error: " + err.message;
+  }
+});
+
+// Section Switcher
+function showSection(id) {
+  document.querySelectorAll("section").forEach(s => s.classList.remove("active"));
+  document.getElementById(id).classList.add("active");
+}
+
+// Dark/Light Toggle
+function toggleMode() {
+  document.body.classList.toggle("dark-mode");
+}
+
+// Car Game Logic
+const canvas = document.getElementById("gameCanvas");
+const ctx = canvas.getContext("2d");
+let player = { x: 130, y: 400, w: 40, h: 60 };
+let enemies = [];
+let score = 0, gameInterval;
+function drawPlayer() {
+  ctx.fillStyle = "blue";
+  ctx.fillRect(player.x, player.y, player.w, player.h);
+}
+function drawEnemies() {
+  ctx.fillStyle = "red";
+  enemies.forEach(e => ctx.fillRect(e.x, e.y, e.w, e.h));
+}
+function moveEnemies() {
+  enemies.forEach(e => e.y += 5);
+  enemies = enemies.filter(e => e.y < canvas.height);
+  if (Math.random() < 0.03) {
+    enemies.push({ x: Math.random() * 260, y: -60, w: 30, h: 50 });
+  }
+}
+function checkCollision() {
+  return enemies.some(e => e.x < player.x + player.w && e.x + e.w > player.x && e.y < player.y + player.h && e.y + e.h > player.y);
+}
+function updateGame() {
+  ctx.clearRect(0, 0, canvas.width, canvas.height);
+  drawPlayer();
+  drawEnemies();
+  moveEnemies();
+  score++;
+  if (checkCollision()) {
+    clearInterval(gameInterval);
+    alert("Game Over! Score: " + score);
+    location.reload();
+  }
+}
+window.addEventListener("keydown", e => {
+  if (e.key === "ArrowLeft") player.x -= 20;
+  if (e.key === "ArrowRight") player.x += 20;
+});
+gameInterval = setInterval(updateGame, 100);
+
+// Stopwatch Logic
+let timer, time = 0;
+function updateStopwatch() {
+  time++;
+  const mins = String(Math.floor(time / 60)).padStart(2, '0');
+  const secs = String(time % 60).padStart(2, '0');
+  document.getElementById("stopwatchDisplay").textContent = `00:${mins}:${secs}`;
+  const lapsDiv = document.getElementById("laps");
+  const lap = document.createElement("div");
+  lap.className = "lap";
+  lap.textContent = `Lap ${Math.floor(time / 60)}: ${mins}:${secs}`;
+  lapsDiv.appendChild(lap);
+}
+function startStopwatch() {
+  if (!timer) timer = setInterval(updateStopwatch, 1000);
+}
+function stopStopwatch() {
+  clearInterval(timer);
+  timer = null;
+}
+function resetStopwatch() {
+  stopStopwatch();
+  time = 0;
+  document.getElementById("stopwatchDisplay").textContent = "00:00:00";
+  document.getElementById("laps").innerHTML = "";
+}
+
+// Weather App
+async function getWeather() {
+  const city = document.getElementById("cityInput").value;
+  const apiKey = "YOUR_API_KEY";
+  try {
+    const res = await fetch(`https://api.openweathermap.org/data/2.5/weather?q=${city}&appid=${apiKey}&units=metric`);
+    const data = await res.json();
+    document.getElementById("weatherResult").innerHTML = `
+      <p><strong>${data.name}</strong> - ${data.weather[0].description}</p>
+      <p>🌡️ ${data.main.temp} °C | 💧 ${data.main.humidity}%</p>
+    `;
+  } catch (err) {
+    document.getElementById("weatherResult").textContent = "City not found!";
+  }
+}
+</script>
+</body>
+</html>
